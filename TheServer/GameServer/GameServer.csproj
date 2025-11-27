@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\MathMonsterUnity\Assets\Scripts\Common\NetworkBuffer.cs" Link="NetworkBuffer.cs" />
+    <Compile Include="..\..\MathMonsterUnity\Assets\Scripts\Common\ObjectPool.cs">
+      <Link>ObjectPool.cs</Link>
+    </Compile>
+    <Compile Include="..\..\MathMonsterUnity\Assets\Scripts\Common\Packet.cs">
+      <Link>Packet.cs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MemoryPack" Version="1.21.4" />
+  </ItemGroup>
+
+</Project>
