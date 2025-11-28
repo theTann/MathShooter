@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="C:\Users\doxie\source\repos\MathMonster\TableConverter\output\net9.0\cs\LevelData_gen.cs" Link="LevelData_gen.cs" />
-    <Compile Include="C:\Users\doxie\source\repos\MathMonster\TableConverter\output\net9.0\cs\MonsterData_gen.cs" Link="MonsterData_gen.cs" />
-    <Compile Include="C:\Users\doxie\source\repos\framework\TableConverter\output\net9.0\cs\SpawnData_gen.cs" Link="SpawnData_gen.cs" />
+    <Compile Include="C:\Users\doxie\source\repos\MathShooter\TableConverter\output\net9.0\cs\LevelData_gen.cs" Link="LevelData_gen.cs" />
+    <Compile Include="C:\Users\doxie\source\repos\MathShooter\TableConverter\output\net9.0\cs\MonsterData_gen.cs" Link="MonsterData_gen.cs" />
+    <Compile Include="C:\Users\doxie\source\repos\MathShooter\TableConverter\output\net9.0\cs\DefineData_gen.cs" Link="DefineData_gen.cs" />
     <Compile Include="..\output\net9.0\predefine_enums\TableLoader.cs" Link="TableLoader.cs" />
     <Compile Include="..\Common\Common.cs" Link="Common.cs" />
     <Compile Include="..\output\net9.0\predefine_enums\predefine_enums.cs" Link="predefine_enums.cs" />

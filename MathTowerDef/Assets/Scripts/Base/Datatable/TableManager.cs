@@ -3,6 +3,7 @@ using UnityEngine;
 public class TableManager : Singleton<TableManager> {
     private LevelDataTable _levelDataTable;
     private MonsterDataTable _monsterDataTable;
+    private DefineDataTable _defineDatatable;
 
     public void initTableManager() {
         var levelDataTable = TableLoader.loadTable<LevelDataTable>("Assets/StreamingAssets/DataTables/LevelData.bytes");
@@ -18,6 +19,13 @@ public class TableManager : Singleton<TableManager> {
             return;
         }
         _monsterDataTable = monsterDataTable;
+        
+        var defineDatatable = TableLoader.loadTable<DefineDataTable>("Assets/StreamingAssets/DataTables/DefineData.bytes");
+        if (defineDatatable == null) {
+            Logger.error($"MonsterDataTable is not exist.");
+            return;
+        }
+        _defineDatatable = defineDatatable;
     }
 
     public ulong getLevelExp(uint level) {
@@ -29,5 +37,12 @@ public class TableManager : Singleton<TableManager> {
             Logger.error($"Monster Data not exist.");
         }
         return result;
+    }
+
+    public float getDefineValue(string key) {
+        bool result = _defineDatatable.DefineDatas.TryGetValue(key, out var value);
+        if (result == false)
+            return 0f;
+        return value.val;
     }
 }

@@ -55,7 +55,9 @@ public class GameManager : MonoSingleton<GameManager> {
 
         _player.initPlayer();
 
-        setHp(100, 100);
+        var hp = (int)TableManager.instance.getDefineValue("hp");
+
+        setHp(hp, hp);
 
         _levelupPanel.showPanel(false);
 

@@ -23,7 +23,8 @@ public class Player : MonoBehaviour, IAnimEventReceiver {
 
     private uint _currentLevel;
 
-    public const float attackPower = 7f;
+    private float _attackPower = 7f;
+
     private float _attackSpeed = 1f; // 초당 공격횟수.
     public float getAttackSpeed() => _attackSpeed;
     public void setAttackSpeed(float speed) => _attackSpeed = speed;
@@ -61,6 +62,9 @@ public class Player : MonoBehaviour, IAnimEventReceiver {
     public void initPlayer() {
         _attackAnimDuration = getAttackAnimClipDuration();
         Logger.debug($"Attack animation duration: {_attackAnimDuration}");
+
+        _attackPower = TableManager.instance.getDefineValue("attack_power");
+        _attackSpeed = TableManager.instance.getDefineValue("attack_speed");
 
         GameEventBus.register<MonsterDieEvent>(onMonsterDie);
 
@@ -147,7 +151,7 @@ public class Player : MonoBehaviour, IAnimEventReceiver {
         addAmmoCount(-1);
         AttackEvent attackEvent = new AttackEvent();
         attackEvent.attacker = this;
-        attackEvent.damage = attackPower;
+        attackEvent.damage = _attackPower;
         attackEvent.targetMonster = target;
         GameEventBus.broadcast(ref attackEvent);
     }
