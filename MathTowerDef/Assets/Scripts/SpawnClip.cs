@@ -13,6 +13,12 @@ public class SpawnClip : BaseTimelineClip {
         _ = doSpawn(playable, context);
     }
 
+    public override void ProcessFrame(Playable playable, FrameData info, object playerData) {
+        base.ProcessFrame(playable, info, playerData);
+        // 이버전으로 바꿔야함.
+    }
+    
+
     // async함수이고 SpawnClip은 destroy될 수 있기 때문에 static으로 this참조를 못하게 함.
     private static async Awaitable doSpawn(Playable playable, SpawnClipContext spawnContext) {
         var duration = playable.GetDuration();
@@ -45,7 +51,7 @@ public class SpawnClip : BaseTimelineClip {
             await Awaitable.WaitForSecondsAsync(waitTime);
 
         var monsterCenter = GameManager.instance.getMonsterCenter();
-        monsterCenter.generateMonster(spawnContext.monsterId);
+        monsterCenter.spawnMonster(spawnContext.monsterId);
     }
 
     private static async Awaitable doSpawnByIntervalType(SpawnClipContext spawnContext, double clipDuration) {
@@ -54,7 +60,7 @@ public class SpawnClip : BaseTimelineClip {
                 {
                     var monsterCenter = GameManager.instance.getMonsterCenter();
                     for (int i = 0; i < spawnContext.monsterCount; i++) {
-                        monsterCenter.generateMonster(spawnContext.monsterId);
+                        monsterCenter.spawnMonster(spawnContext.monsterId);
                     }
                 }
                 break;
@@ -64,7 +70,7 @@ public class SpawnClip : BaseTimelineClip {
                     await Awaitable.WaitForSecondsAsync(waitTime);
                     var monsterCenter = GameManager.instance.getMonsterCenter();
                     for (int i = 0; i < spawnContext.monsterCount; i++) {
-                        monsterCenter.generateMonster(spawnContext.monsterId);
+                        monsterCenter.spawnMonster(spawnContext.monsterId);
                     }
                 }
                 break;
@@ -80,7 +86,7 @@ public class SpawnClip : BaseTimelineClip {
                     waitTimes.Sort();
                     foreach (var waitTime in waitTimes) {
                         await Awaitable.WaitForSecondsAsync(waitTime);
-                        monsterCenter.generateMonster(spawnContext.monsterId);
+                        monsterCenter.spawnMonster(spawnContext.monsterId);
                     }
                 }
                 break;
@@ -91,7 +97,7 @@ public class SpawnClip : BaseTimelineClip {
                     for (int i = 0; i < spawnContext.monsterCount; i++) {
                         if (i > 0)
                             await Awaitable.WaitForSecondsAsync(interval);
-                        monsterCenter.generateMonster(spawnContext.monsterId);
+                        monsterCenter.spawnMonster(spawnContext.monsterId);
                     }
                 }
                 break;

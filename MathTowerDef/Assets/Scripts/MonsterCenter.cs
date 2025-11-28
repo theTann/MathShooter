@@ -1,9 +1,17 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEditor.VersionControl;
+using UnityEngine;
 using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 public class MonsterCenter {
-    List<Monster> reachedMonsters = new();
+    public enum WaveState {
+        playing,
+        summonEnd,
+        noMonster,
+    }
+
+    List<Monster> _reachedMonsters = new();
     List<Monster> _activeMonster = new();
 
     PlayableDirector _pd;
@@ -14,7 +22,12 @@ public class MonsterCenter {
     public Monster getFrontMonster() => _frontMonster;
 
     private bool _freezeMove = false;
-    public void setFreezeMove(bool freezeMove) { _freezeMove = freezeMove; }
+    
+
+    WaveState _waveState;
+    int _currentWaveIndex = 0;
+    int _currentSpawnCount;
+    int _maxSpawnCount;
 
     public void initMonsterCenter() {
         _player = GameManager.instance.getPlayer();
@@ -22,16 +35,58 @@ public class MonsterCenter {
 
         GameEventBus.register<MonsterDieEvent>(onMonsterDie);
 
-        var playableAsset = ResourceManager.loadSync<PlayableAsset>("Assets/SpawnTimeline/Wave0.playable");
-        _pd.playableAsset = playableAsset;
-        _pd.Play();
+        _ = loadAndPlayWave(_currentWaveIndex, 0);
     }
 
     public void destroyMonsterCenter() {
         GameEventBus.unregister<MonsterDieEvent>(onMonsterDie);
     }
 
-    public Monster generateMonster(int id) {
+    private async Awaitable<bool> loadAndPlayWave(int waveIndex, float waitSec) {
+        string key = $"Assets/SpawnTimeline/Wave{waveIndex}.playable";
+        
+        var playableAsset = ResourceManager.loadSync<PlayableAsset>(key);
+        if (playableAsset == null) {
+            Logger.info($"all wave clear!");
+            return false;
+        }
+
+        getWaveInformation(playableAsset);
+        _pd.playableAsset = playableAsset;
+
+        if(waitSec > 0) {
+            await Awaitable.WaitForSecondsAsync(waitSec);
+        }
+        _pd.Play();
+        return true;
+    }
+
+    public void getWaveInformation(PlayableAsset asset) {
+        var timeline = asset as TimelineAsset;
+        if (timeline == null) {
+            Logger.error($"not a TimelineAsset. {asset}");
+            return;
+        }
+
+        _currentSpawnCount = 0;
+        _maxSpawnCount = 0;
+
+        foreach (var track in timeline.GetOutputTracks()) {
+            if (track.GetType() != typeof(SpawnTrack))
+                continue;
+            
+            foreach (var clip in track.GetClips()) {
+                var clipAsset = clip.asset as SpawnClipAsset;
+                _maxSpawnCount += clipAsset.context.monsterCount;
+            }
+        }
+        
+        _waveState = WaveState.playing;
+
+        Logger.debug($"{asset}, total spawn count : {_maxSpawnCount}");
+    }
+
+    public Monster spawnMonster(int id) {
         MonsterData monsterData = TableManager.instance.getMonsterData(id);
 
         // todo : to async load prefab
@@ -43,19 +98,25 @@ public class MonsterCenter {
 
         monster.initMonster(monsterData);
         _activeMonster.Add(monster);
+        _currentSpawnCount++;
+
+        if (_currentSpawnCount == _maxSpawnCount) {
+            _waveState = WaveState.summonEnd;
+        }
+
         return monster;
     }
     
     public void update(float deltaTime) {
         _minZPosition = float.MaxValue;
         _frontMonster = null;
-        reachedMonsters.Clear();
+        _reachedMonsters.Clear();
         bool doMove = !_freezeMove;
         foreach (var monster in _activeMonster) {
             float zPos = monster.updateMonster(deltaTime, doMove);
 
             if(zPos <= 0f) {
-                reachedMonsters.Add(monster);
+                _reachedMonsters.Add(monster);
                 continue;
             } 
             
@@ -66,11 +127,29 @@ public class MonsterCenter {
         }
 
         // todo : 최적화 필요.
-        foreach(var monster in reachedMonsters) {
+        foreach(var monster in _reachedMonsters) {
             onMonsterReachEnd(monster);
         }
 
+        if(_waveState == WaveState.summonEnd) {
+            if (_activeMonster.Count == 0) {
+                _waveState = WaveState.noMonster;
+                _currentWaveIndex++;
+                _ = loadAndPlayWave(_currentWaveIndex, 3);
+            }
+        }
+
         // updateSpawn(deltaTime);
+    }
+
+    public void setFreezeMove(bool freezeMove) { 
+        _freezeMove = freezeMove;
+        if (_freezeMove == true) {
+            _pd.Pause();
+        } 
+        else {
+            _pd.Resume();
+        }
     }
 
     //private void updateSpawn(float deltaTime) {
