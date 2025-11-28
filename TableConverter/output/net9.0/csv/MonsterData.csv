@@ -1,3 +1,12 @@
 MonsterId*,ResourceId,spd,hp,gainExp,damageToBase
 int,string,float,float,ulong,int
-0,Assets/Slime/Slime.prefab,0.1,10,5,2
+0,Assets/Slime/Slime.prefab,0.1,30,1,2
+1,Assets/Slime/Slime.prefab,0.1,39,1,4
+2,Assets/Slime/Slime.prefab,0.1,51,1,6
+3,Assets/Slime/Slime.prefab,0.1,66,1,8
+4,Assets/Slime/Slime.prefab,0.1,86,1,10
+5,Assets/Slime/Slime.prefab,0.1,111,1,12
+6,Assets/Slime/Slime.prefab,0.1,145,1,14
+7,Assets/Slime/Slime.prefab,0.1,188,1,16
+8,Assets/Slime/Slime.prefab,0.1,245,1,18
+9,Assets/Slime/Slime.prefab,0.1,318,1,20

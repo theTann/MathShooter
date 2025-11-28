@@ -20,8 +20,28 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2b6f99e9597be6342a2e5b10acfa4406
+    m_Address: Assets/SpawnTimeline/Wave3.playable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 330e2c2a134589044b34f0ab9e3a34f1
     m_Address: Assets/Tower/Tower.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 47892b49c4d1a0f4182ab48d7d98803d
+    m_Address: Assets/SpawnTimeline/Wave2.playable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6f721446e04741f4ca5d298f8144cdaa
+    m_Address: Assets/SpawnTimeline/Wave8.playable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 769750314e39df64ca59f72277716844
+    m_Address: Assets/SpawnTimeline/Wave6.playable
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -30,8 +50,33 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9dc0933c282347c40bf9c731f05d51fa
+    m_Address: Assets/SpawnTimeline/Wave4.playable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e029871b40ade142834c13b6edbd74a
+    m_Address: Assets/SpawnTimeline/Wave5.playable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9f94c9fe264327c489c0b250008a3db0
+    m_Address: Assets/SpawnTimeline/Wave1.playable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b95bfdbc164d7de4d9ed359443958f21
+    m_Address: Assets/SpawnTimeline/Wave7.playable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c9026d79bd29f1e4ba4317ce91b3a6cc
     m_Address: Assets/Gem/Gem.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ccca372951a828743b3147a0bde361d2
+    m_Address: Assets/SpawnTimeline/Wave9.playable
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
