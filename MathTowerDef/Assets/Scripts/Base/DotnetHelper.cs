@@ -29,4 +29,14 @@ public static class DotnetHelper {
             (list[n], list[k]) = (list[k], list[n]); // swap
         }
     }
+
+    public static bool isNullOrEmpty<T>(this IList<T> list) {
+        if (list == null) 
+            return true;
+
+        if (list.Count == 0) 
+            return true;
+
+        return false;
+    }
 }

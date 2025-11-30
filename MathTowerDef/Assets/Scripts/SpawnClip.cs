@@ -4,103 +4,102 @@ using System.Collections.Generic;
 
 public class SpawnClip : BaseTimelineClip {
     public SpawnClipContext context;
+    float _elapsedTime = 0f;
+    int _spawnCount = 0;
+
+    List<float> _spawnTimings = null;
 
     public override void onEnter(Playable playable, FrameData info, object playerData) {
         base.onEnter(playable, info, playerData);
         
-        // _spawnPoint = (SpawnPointPrefabCache)playerData;
-        // Debug.Log(_spawnPoint);
-        _ = doSpawn(playable, context);
+        _elapsedTime = 0.0f;
+        _spawnCount = 0;
+
+        // monsterCount가 1일때만 SpawnType을 봄.
+        if (context.monsterCount == 1 && context.spawnType == SpawnClipType.atStart) {
+            doSpawnNow(1);
+            return;
+        }
+        else if(context.monsterCount > 1 && context.intervalType == IntervalType.atOnceOnStart ) {
+            doSpawnNow(context.monsterCount);
+            return;
+        }
+
+        // LoopType이라면 computeWaitTimes을 두번할 필요는 없으므로 _spawnTiming이 존재하면 리턴.
+        if (_spawnTimings.isNullOrEmpty() == false)
+            return;
+
+        computeWaitTimes(playable);
+    }
+
+    private void doSpawnNow(int monsterCount) {
+        int monsterId = context.monsterId;
+        for (int i = 0; i < monsterCount; i++) {
+            var monsterCenter = GameManager.instance.getMonsterCenter();
+            monsterCenter.spawnMonster(monsterId);
+        }
+    }
+
+    private void computeWaitTimes(Playable playable) {
+        
+        float clipDuration = (float)playable.GetDuration();
+        
+        // monsterCount가 1일때만 SpawnType을 봄.
+        // 그 이상일때에는 IntervalType을 봄.
+        if(context.monsterCount == 1) {
+            // SpawnClipType.atStart는 onEnter에서 처리했음.
+            if (context.spawnType == SpawnClipType.randomInRange) {
+                _spawnTimings = new List<float>(1);
+                float waitTime = Random.Range(0f, clipDuration);
+                _spawnTimings.Add(waitTime);
+            }
+        }
+        else if(context.monsterCount > 1) {
+            // IntervalType.atOnceOnStart는 onEnter에서 처리했음.
+            if (context.intervalType == IntervalType.atOnceOnRandom) {
+                _spawnTimings = new List<float>(1);
+                float waitTime = Random.Range(0f, clipDuration);
+                _spawnTimings.Add(waitTime);
+            }
+            else if (context.intervalType == IntervalType.evenDistribution) {
+                _spawnTimings = new List<float>(context.monsterCount);
+                float interval = (float)clipDuration / context.monsterCount;
+                for(int i = 0; i < context.monsterCount; i++) {
+                    _spawnTimings.Add(i * interval);
+                }
+            }
+            else if (context.intervalType == IntervalType.randomInterval) {
+                _spawnTimings = new List<float>(context.monsterCount);
+                for (int i = 0; i < context.monsterCount; i++) {
+                    float waitTime = Random.Range(0f, clipDuration);
+                    _spawnTimings.Add(waitTime);
+                }
+                _spawnTimings.Sort();
+            }
+        }
+
+
+        if (_spawnTimings == null) {
+            _spawnTimings = new List<float>();
+        }
     }
 
     public override void ProcessFrame(Playable playable, FrameData info, object playerData) {
         base.ProcessFrame(playable, info, playerData);
-        // 이버전으로 바꿔야함.
-    }
-    
 
-    // async함수이고 SpawnClip은 destroy될 수 있기 때문에 static으로 this참조를 못하게 함.
-    private static async Awaitable doSpawn(Playable playable, SpawnClipContext spawnContext) {
-        var duration = playable.GetDuration();
+        if (_spawnTimings.isNullOrEmpty() == true)
+            return;
 
-        try {
-            // 스폰 카운트가 1이면 spawnType에 따라서, 그 이상이면 intervalType에 따라서 처리
-            if (spawnContext.monsterCount == 1) {
-                await doSpawnBySpawnType(spawnContext, duration);
+        float deltaTime = GameManager.deltaTime;
+        _elapsedTime += deltaTime;
+
+        for(int i = _spawnCount; i < _spawnTimings.Count; i++) {
+            float timing = _spawnTimings[i];
+            if (_elapsedTime < timing) {
+                break;
             }
-            else if(spawnContext.monsterCount > 1) {
-                await doSpawnByIntervalType(spawnContext, duration);
-            }
-        }
-        catch (System.Exception e) {
-            Logger.error(e);
-        }
-    }
-
-    private static async Awaitable doSpawnBySpawnType(SpawnClipContext spawnContext, double clipDuration) {
-        float waitTime = 0f;
-        switch (spawnContext.spawnType) {
-            case SpawnClipType.atStart:
-                break;
-            case SpawnClipType.randomInRange:
-                waitTime = Random.Range(0f, (float)clipDuration);
-                break;
-        }
-
-        if (waitTime > 0f)
-            await Awaitable.WaitForSecondsAsync(waitTime);
-
-        var monsterCenter = GameManager.instance.getMonsterCenter();
-        monsterCenter.spawnMonster(spawnContext.monsterId);
-    }
-
-    private static async Awaitable doSpawnByIntervalType(SpawnClipContext spawnContext, double clipDuration) {
-        switch (spawnContext.intervalType) {
-            case IntervalType.atOnceOnStart:
-                {
-                    var monsterCenter = GameManager.instance.getMonsterCenter();
-                    for (int i = 0; i < spawnContext.monsterCount; i++) {
-                        monsterCenter.spawnMonster(spawnContext.monsterId);
-                    }
-                }
-                break;
-            case IntervalType.atOnceOnRandom:
-                {
-                    float waitTime = Random.Range(0f, (float)clipDuration);
-                    await Awaitable.WaitForSecondsAsync(waitTime);
-                    var monsterCenter = GameManager.instance.getMonsterCenter();
-                    for (int i = 0; i < spawnContext.monsterCount; i++) {
-                        monsterCenter.spawnMonster(spawnContext.monsterId);
-                    }
-                }
-                break;
-            case IntervalType.randomInterval:
-                {
-                    var monsterCenter = GameManager.instance.getMonsterCenter();
-                    List<float> waitTimes = new List<float>(spawnContext.monsterCount);
-
-                    for (int i = 0; i < spawnContext.monsterCount; i++) {
-                        float waitTime = Random.Range(0f, (float)clipDuration);
-                        waitTimes.Add(waitTime);
-                    }
-                    waitTimes.Sort();
-                    foreach (var waitTime in waitTimes) {
-                        await Awaitable.WaitForSecondsAsync(waitTime);
-                        monsterCenter.spawnMonster(spawnContext.monsterId);
-                    }
-                }
-                break;
-            case IntervalType.evenDistribution:
-                {
-                    float interval = (float)clipDuration / spawnContext.monsterCount;
-                    var monsterCenter = GameManager.instance.getMonsterCenter();
-                    for (int i = 0; i < spawnContext.monsterCount; i++) {
-                        if (i > 0)
-                            await Awaitable.WaitForSecondsAsync(interval);
-                        monsterCenter.spawnMonster(spawnContext.monsterId);
-                    }
-                }
-                break;
+            doSpawnNow(1);
+            _spawnCount++;
         }
     }
 }

@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
 using TMPro;
 using System.Linq;
+using Mono.Cecil;
 
 public class NumberPanel : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler {
     enum Direction {
@@ -40,12 +41,17 @@ public class NumberPanel : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
     public void initNumberPanel() {
         createGems();
-        _targetNumbers[0] = generateTargetNumber(3);
-        _targetNumbers[1] = generateTargetNumber(4);
-        _targetNumbers[2] = generateTargetNumber(5);
-        _targetNumberTexts[0].text = _targetNumbers[0].ToString();
-        _targetNumberTexts[1].text = _targetNumbers[1].ToString();
-        _targetNumberTexts[2].text = _targetNumbers[2].ToString();
+
+        int generateTargetNumberCount = 3;
+        var results = generateTargetNumbers(generateTargetNumberCount);
+        if(results == null) {
+            return;
+        }
+
+        for(int i = 0; i < generateTargetNumberCount; i++) {
+            _targetNumbers[i] = results[i];
+            _targetNumberTexts[i].text = _targetNumbers[i].ToString();
+        }
 
         setOnMatchedNumber(GameManager.instance.onMatchedNumber);
 
@@ -195,21 +201,20 @@ public class NumberPanel : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
         int sum = getCurrentSum(true);
 
-        for (int i = 0; i < _targetNumbers.Length; i++) {
-            int target = _targetNumbers[i];
-            
-            if (sum == target) {
-                foreach(var gem in _selectedGems) {
-                    gem.randomNumber();
-                }
-                _targetNumbers[i] = 0;
-                _targetNumbers[i] = generateTargetNumber(i + 3);
+        if(_targetNumbers.Contains(sum)) {
+            int generateCount = 3;
+            var result = generateTargetNumbers(generateCount);
+            if (result == null)
+                return;
+
+            for(int i = 0; i <  generateCount; i++) {
+                _targetNumbers[i] = result[i];
                 _targetNumberTexts[i].text = _targetNumbers[i].ToString();
                 Logger.debug($"new targetnumber generated. {_targetNumbers[i]}");
-                _onMatchedNumber?.Invoke(sum);
-                break;
             }
+            _onMatchedNumber?.Invoke(sum);
         }
+
         _lastSelectedGem = null;
         _selectedGems.Clear();
     }
@@ -224,38 +229,111 @@ public class NumberPanel : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         return sum;
     }
 
-    List<(int x, int y)> _closedNodeListForTargetNumber = new();
+    
+    List<int> generateTargetNumbers(int count) {
+        HashSet<int> candidates = new();
+        
+        List<(int x, int y)> closedListForTargetNumber = new();
 
-    int generateTargetNumber(int iterationCount) {
-        int targetNumber = 0;
-        bool exist = false;
-        do {
-            _closedNodeListForTargetNumber.Clear();
+        int rangeMin = 10;
+        int rangeMax = 27;
 
-            (int x, int y) startPos = (Random.Range(0, xCount), Random.Range(0, yCount));
-            (int x, int y) targetPos = startPos;
+        // todo : resetCount를 굳이 10번 안돌아도 될수있음.혹은 10번돌아도 안될수도있음(그럴일은 잘 없겠지만?) 이거 해결할 것
+        int resetCount = 10;
 
-            for (int i = 0; i < iterationCount; i++) {
-                Gem currentGem = _gems[targetPos.x, targetPos.y];
-                // currentGem.setTempColor();
-                targetNumber += currentGem.getNumber();
+        int currentSum = 0;
+        (int x, int y) startPos = (Random.Range(0, xCount), Random.Range(0, yCount));
+        (int x, int y) currentPos = startPos;
+        closedListForTargetNumber.Clear();
 
-                var availabledirection = checkAvailableDirection(targetPos);
-                if (availabledirection == Direction.none)
-                    break;
+        while (resetCount > 0) {
+            Gem currentGem = _gems[currentPos.x, currentPos.y];
+            int currentNumber = currentGem.getNumber();
+            currentSum += currentNumber;
 
-                _closedNodeListForTargetNumber.Add(targetPos);
-
-                Direction targetDirection = getRandomActiveDirection(availabledirection);
-                targetPos = getPositionValue(targetPos, targetDirection);
+            if(currentSum >= rangeMin && currentSum <= rangeMax) {
+                candidates.Add(currentSum);
             }
-            Logger.debug($"target number : {targetNumber}, actual iteration count : {_closedNodeListForTargetNumber.Count}");
 
-            exist = _targetNumbers.Contains(targetNumber);
-        } while (exist == true);
+            if(currentSum > rangeMax) {
+                // retry
+                resetCount--;
+                currentSum = 0;
+                startPos = (Random.Range(0, xCount), Random.Range(0, yCount));
+                currentPos = startPos;
+                closedListForTargetNumber.Clear();
+                continue;
+            }
 
-        return targetNumber;
+            var availabledirection = checkAvailableDirection(currentPos, closedListForTargetNumber);
+            if (availabledirection == Direction.none) {
+                // retry
+                resetCount--;
+                currentSum = 0;
+                startPos = (Random.Range(0, xCount), Random.Range(0, yCount));
+                currentPos = startPos;
+                closedListForTargetNumber.Clear();
+                continue;
+            }
+            
+            closedListForTargetNumber.Add(currentPos);
+            Direction targetDirection = getRandomActiveDirection(availabledirection);
+            currentPos = getPositionValue(currentPos, targetDirection);
+        }
+
+        if(candidates.Count < count) {
+            Logger.error($"can't generate target numbers. please check algorithm");
+            return null;
+        }
+        var candidateList = candidates.ToList();
+        List<int> result = new List<int>(count);
+        for (int i = 0; i < count; i++) {
+            int randomIndex = Random.Range(i, candidateList.Count);
+
+            // 현재 위치(i)와 랜덤 위치(randomIndex)의 값을 교환 (Swap)
+            int temp = candidateList[i];
+            candidateList[i] = candidateList[randomIndex];
+            candidateList[randomIndex] = temp;
+
+            // 랜덤하게 섞인 i번째 요소를 결과에 추가
+            result.Add(candidateList[i]);
+        }
+        return result;
     }
+
+    // todo : 이전버전 일단 주석처리. 추후 삭제
+    //int generateTargetNumber(int iterationCount) {
+    //    int targetNumber = 0;
+    //    bool exist = false;
+        
+
+    //    do {
+    //        _closedNodeListForTargetNumber.Clear();
+
+    //        (int x, int y) startPos = (Random.Range(0, xCount), Random.Range(0, yCount));
+    //        (int x, int y) targetPos = startPos;
+
+    //        for (int i = 0; i < iterationCount; i++) {
+    //            Gem currentGem = _gems[targetPos.x, targetPos.y];
+    //            // currentGem.setTempColor();
+    //            targetNumber += currentGem.getNumber();
+
+    //            var availabledirection = checkAvailableDirection(targetPos);
+    //            if (availabledirection == Direction.none)
+    //                break;
+
+    //            _closedNodeListForTargetNumber.Add(targetPos);
+
+    //            Direction targetDirection = getRandomActiveDirection(availabledirection);
+    //            targetPos = getPositionValue(targetPos, targetDirection);
+    //        }
+    //        Logger.debug($"target number : {targetNumber}, actual iteration count : {_closedNodeListForTargetNumber.Count}");
+
+    //        exist = _targetNumbers.Contains(targetNumber);
+    //    } while (exist == true);
+
+    //    return targetNumber;
+    //}
 
     (int x, int y) getPositionValue((int x, int y) pos, Direction dir) {
         if (dir == Direction.none)
@@ -292,27 +370,27 @@ public class NumberPanel : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         return activeList[index];
     }
 
-    Direction checkAvailableDirection((int x, int y) pos) {
+    Direction checkAvailableDirection((int x, int y) pos, List<(int x, int y)> closedNodeListForTargetNumber) {
         Direction availableDirection = Direction.left | Direction.right | Direction.up | Direction.down;
 
         // left
         (int x, int y) checkPos = (pos.x - 1, pos.y);
-        if(isOutOfBound(checkPos) == true || _closedNodeListForTargetNumber.Contains(checkPos) == true)
+        if(isOutOfBound(checkPos) == true || closedNodeListForTargetNumber.Contains(checkPos) == true)
             availableDirection = availableDirection & ~Direction.left;
 
         // right
         checkPos = (pos.x + 1, pos.y);
-        if (isOutOfBound(checkPos) == true || _closedNodeListForTargetNumber.Contains(checkPos) == true)
+        if (isOutOfBound(checkPos) == true || closedNodeListForTargetNumber.Contains(checkPos) == true)
             availableDirection = availableDirection & ~Direction.right;
 
         // up
         checkPos = (pos.x, pos.y - 1);
-        if (isOutOfBound(checkPos) == true || _closedNodeListForTargetNumber.Contains(checkPos) == true)
+        if (isOutOfBound(checkPos) == true || closedNodeListForTargetNumber.Contains(checkPos) == true)
             availableDirection = availableDirection & ~Direction.up;
 
         // down
         checkPos = (pos.x, pos.y + 1);
-        if (isOutOfBound(checkPos) == true || _closedNodeListForTargetNumber.Contains(checkPos) == true)
+        if (isOutOfBound(checkPos) == true || closedNodeListForTargetNumber.Contains(checkPos) == true)
             availableDirection = availableDirection & ~Direction.down;
 
         return availableDirection;

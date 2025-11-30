@@ -22,7 +22,7 @@ public class MonsterCenter {
     public Monster getFrontMonster() => _frontMonster;
 
     private bool _freezeMove = false;
-    
+    public bool getFreezeMove() => _freezeMove;
 
     WaveState _waveState;
     int _currentWaveIndex = 0;
@@ -44,7 +44,7 @@ public class MonsterCenter {
 
     private async Awaitable<bool> loadAndPlayWave(int waveIndex, float waitSec) {
         string key = $"Assets/SpawnTimeline/Wave{waveIndex}.playable";
-        
+
         var playableAsset = ResourceManager.loadSync<PlayableAsset>(key);
         if (playableAsset == null) {
             Logger.info($"all wave clear!");
@@ -54,10 +54,13 @@ public class MonsterCenter {
         getWaveInformation(playableAsset);
         _pd.playableAsset = playableAsset;
 
-        if(waitSec > 0) {
+        if (waitSec > 0) {
             await Awaitable.WaitForSecondsAsync(waitSec);
         }
         _pd.Play();
+
+        Logger.info($"current wave index : {waveIndex}, total monster count : {_maxSpawnCount}");
+
         return true;
     }
 
@@ -74,16 +77,14 @@ public class MonsterCenter {
         foreach (var track in timeline.GetOutputTracks()) {
             if (track.GetType() != typeof(SpawnTrack))
                 continue;
-            
+
             foreach (var clip in track.GetClips()) {
                 var clipAsset = clip.asset as SpawnClipAsset;
                 _maxSpawnCount += clipAsset.context.monsterCount;
             }
         }
-        
-        _waveState = WaveState.playing;
 
-        Logger.debug($"{asset}, total spawn count : {_maxSpawnCount}");
+        _waveState = WaveState.playing;
     }
 
     public Monster spawnMonster(int id) {
@@ -106,7 +107,7 @@ public class MonsterCenter {
 
         return monster;
     }
-    
+
     public void update(float deltaTime) {
         _minZPosition = float.MaxValue;
         _frontMonster = null;
@@ -115,11 +116,11 @@ public class MonsterCenter {
         foreach (var monster in _activeMonster) {
             float zPos = monster.updateMonster(deltaTime, doMove);
 
-            if(zPos <= 0f) {
+            if (zPos <= 0f) {
                 _reachedMonsters.Add(monster);
                 continue;
-            } 
-            
+            }
+
             if (zPos < _minZPosition) {
                 _minZPosition = zPos;
                 _frontMonster = monster;
@@ -127,11 +128,11 @@ public class MonsterCenter {
         }
 
         // todo : 최적화 필요.
-        foreach(var monster in _reachedMonsters) {
+        foreach (var monster in _reachedMonsters) {
             onMonsterReachEnd(monster);
         }
 
-        if(_waveState == WaveState.summonEnd) {
+        if (_waveState == WaveState.summonEnd) {
             if (_activeMonster.Count == 0) {
                 _waveState = WaveState.noMonster;
                 _currentWaveIndex++;
@@ -142,11 +143,15 @@ public class MonsterCenter {
         // updateSpawn(deltaTime);
     }
 
-    public void setFreezeMove(bool freezeMove) { 
+    public void setFreezeMove(bool freezeMove) {
         _freezeMove = freezeMove;
+        freezePlayableDirector();
+    }
+
+    public void freezePlayableDirector() {
         if (_freezeMove == true) {
             _pd.Pause();
-        } 
+        }
         else {
             _pd.Resume();
         }
